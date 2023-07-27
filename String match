@@ -41,20 +41,15 @@ int matchCount(char txt[],char ptrn[], int n, int m)
    for(i = 0; i <= n-m; i++)
    {
       j = 0;
-      count+=m;
       while(j<m && ptrn[j] == txt[i+j])
       {
+         count++;
          j++;
       }
       if(j == m)
-      break;
-     
-      else
-      {
-         j++;
-         count-= m%j;
-      }
-     
+        break;
+
+      count++;
    }
    
    return count;
