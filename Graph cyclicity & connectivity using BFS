@@ -1,0 +1,184 @@
+// BFS, cyclicity & connectivity using BFS
+// graph implemented by adj matrix
+
+// while taking inputs, vertices start index is '1', i.e. in program if vtx is from 0->2, then while entering input, enter 1->3 
+
+#include<stdio.h>
+
+int n,i,j,k, acyclic = 1, connected = 1, count = 0;
+/////////  Graph Creation //////////
+void printGraphMatrix(int (*a)[n]);
+
+void createGraph(int (*a)[n], int[]);
+
+///////// BFS Traversal  //////////
+void bfs(int (*a)[n], int[], int[], int);
+
+//////// Connectivity  /////////
+void checkConnectivity(int (*a)[n], int[]);
+int backEdge(int (*a)[n], int, int[]);
+
+int main()
+{
+    
+    printf("Enter the number of vertices in the graph:\t");
+    scanf("%d",&n);
+    
+    int a[n][n], vtxIndegree[n]; // we'll be starting the bfs from that vertex whose indegree is zero
+
+    for(int i = 0; i<n; i++)
+       vtxIndegree[i] = 0;
+       
+    createGraph(a, vtxIndegree);
+    printGraphMatrix(a);
+    
+    checkConnectivity(a, vtxIndegree);
+    
+    if(acyclic)
+      printf("\nAcyclic\n");
+      
+    else
+      printf("\nCyclic\n");
+    
+    return 0;
+}
+
+void printGraphMatrix(int (*a)[n])
+{
+    printf("\nAdjacency Matrix....\n");
+    for(i = 0; i<n; i++)
+    {
+        for(j=0; j<n; j++)
+           printf("%d  ",a[i][j]);
+        printf("\n");
+    }
+}
+
+void createGraph(int (*a)[n], int vtxIndegree[])
+{
+    for(i = 0; i<n; i++)     
+    {
+        for(j = 0; j<n; j++)   // initializing each value to of graph zero
+        a[i][j] = 0;
+    }
+    
+    while(i != -1 || j != -1)
+    {
+        printf("\nEnter '-1' to stop !!\n");
+        printf("An edge exists from: "); scanf("%d",&i);
+        if(i == -1) break;
+        printf("                 to: "); scanf("%d",&j);
+        i--; 
+        j--;
+        if(i >= n || j >= n)
+        {
+            printf("\nEnter valid vertices !!\n");
+        }
+        else
+        {
+            a[i][j] = 1;
+            vtxIndegree[j]+=1;
+        }
+    }
+}
+
+void checkConnectivity(int (*a)[n], int vtxIndegree[])
+{
+    FILE*fp = fopen("results.txt","a");
+    int v[n], rs[n], startIndex = 0;
+    for(int i = 0; i<n; i++)
+    {
+        v[i] = rs[i] = 0;
+    }
+    for(int i = 0; i<n; i++)
+       if(vtxIndegree[i] == 0)
+       {  
+           startIndex = i;
+           break;
+       }   
+     printf("\nChecking connectivity from vertex %d\n",startIndex+1);      
+    
+    bfs(a,v,rs,startIndex);
+    fprintf(fp,"%d\t%d\n",n,count);
+    fclose(fp);
+    
+    for(int i = 0; i<n; i++)
+       if(!v[i])
+          connected = 0;
+    
+    if(connected == 1)
+      printf("\nConnected\n");
+      
+    else
+    {
+        printf("\nNot connected, component 1 displayed above...\n");
+        int component = 2;
+    
+        for(int i =0; i<n;i++)
+            rs[i] = 0;
+            
+        for(int i = 0; i<n; i++)
+        {
+            if(!v[i])
+            {
+               printf("\n\nComponent %d\n",component++);
+               bfs(a,v,rs,i);  
+            }
+        }
+    }
+}
+
+void bfs(int (*a)[n], int v[], int rs[], int k)
+{
+    v[k] = rs[k] = 1;
+    
+    /*
+       we require rs[] in backEdge(), if the graph is 'not connected',
+       then before performing the bfs on next component, the rs[] will be
+       initialized to '0'.
+    */
+    
+    printf("\nVertex %d visited\n", k + 1);
+    int queue[n], front = 0, rear = 0;
+    for (int i = 0; i < n; i++)
+        queue[i] = 0;
+
+    queue[rear] = k;
+    while (front <= rear)
+    {
+        int currentNode = queue[front];
+        printf("\nCurrent Node is : %d\n",currentNode+1);
+        for (int i = 0; i < n; i++)
+        {
+            count++;
+            if (a[currentNode][i])  // an edge from 'currentNode+1' -> 'i+1' exists
+            {
+                if (!v[i]) // vertex 'i+1' has not been visited yet
+                {
+                    rear += 1;
+                    queue[rear] = i;
+                    printf("\nVertex %d visited\n", i + 1);
+                    v[i] = rs[i] = 1;
+                }
+                else if(backEdge(a,i,rs)) // if 'i+1' has already been visited then check for any backedge to the already visited vertices in the current component
+                {   
+                    printf("\nfrom %d to %d,there is a backedge\n",currentNode+1,i+1);
+                    acyclic = 0;
+                }
+            }
+        }
+        front += 1;
+    }
+    for(int i = 0; i<n; i++)
+        rs[i] = 0;
+}
+
+int backEdge(int (*a)[n], int i, int rs[]) // to check for the backedge to an already visted vertex(i.e. rs[j] == 1) in the current component
+{
+    for(int j=0; j<n; j++)
+       if(rs[j]) // vertex 'j+1' belongs to this component
+          if(a[i][j]) // vertex 'i+1' is a part of the current component and backedge exists to an already visited vertex 'j+1'
+            return 1;
+            
+    return 0;
+}
